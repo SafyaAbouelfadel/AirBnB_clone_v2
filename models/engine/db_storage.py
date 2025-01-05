@@ -1,84 +1,44 @@
 #!/usr/bin/python3
-"""Define Database storage engine using MySQL database"""
-import os
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, scoped_session
-from models.base_model import Base
-from models.state import State
-from models.city import City
-from models.user import User
-from models.place import Place
-from models.amenity import Amenity
-from models.review import Review
+"""This module defines a base class for all models in our hbnb clone"""
+import uuid
+from datetime import datetime
 
-class DBStorage:
-    """This class manages storage of hbnb models in a SQL database."""
 
-    __engine = None
-    __session = None
-
-    def __init__(self):
-        """Initialize the SQL database storage."""
-        user = os.getenv("HBNB_MYSQL_USER")
-        pword = os.getenv("HBNB_MYSQL_PWD")
-        host = os.getenv("HBNB_MYSQL_HOST")
-        db_name = os.getenv("HBNB_MYSQL_DB")
-        env = os.getenv("HBNB_ENV")
-        DATABASE_URL = "mysql+mysqldb://{}:{}@{}:3306/{}".format(
-            user, pword, host, db_name
-        )
-
-        self.__engine = create_engine(DATABASE_URL, pool_pre_ping=True)
-        if env == "test":
-            Base.metadata.drop_all(self.__engine)
-
-    def all(self, cls=None):
-        """Return a dictionary of models currently in storage."""
-        objects = dict()
-        all_classes = (User, State, City, Amenity, Place, Review)
-        if cls is None:
-            for class_type in all_classes:
-                query = self.__session.query(class_type)
-                for obj in query.all():
-                    obj_key = "{}.{}".format(obj.__class__.__name__, obj.id)
-                    objects[obj_key] = obj
+class BaseModel:
+    """A base class for all hbnb models"""
+    def __init__(self, *args, **kwargs):
+        """Instatntiates a new model"""
+        if not kwargs:
+            from models import storage
+            self.id = str(uuid.uuid4())
+            self.created_at = datetime.now()
+            self.updated_at = datetime.now()
+            storage.new(self)
         else:
-            query = self.__session.query(cls)
-            for obj in query.all():
-                obj_key = "{}.{}".format(obj.__class__.__name__, obj.id)
-                objects[obj_key] = obj
-        return objects
+            kwargs['updated_at'] = datetime.strptime(kwargs['updated_at'],
+                                                     '%Y-%m-%dT%H:%M:%S.%f')
+            kwargs['created_at'] = datetime.strptime(kwargs['created_at'],
+                                                     '%Y-%m-%dT%H:%M:%S.%f')
+            del kwargs['__class__']
+            self.__dict__.update(kwargs)
 
-    def delete(self, obj=None):
-        """Remove an object from the storage database."""
-        if obj is not None:
-            self.__session.query(type(obj)).filter(
-                type(obj).id == obj.id
-            ).delete(synchronize_session=False)
-
-    def new(self, obj):
-        """Add new object to storage database."""
-        if obj is not None:
-            try:
-                self.__session.add(obj)
-                self.__session.flush()
-                self.__session.refresh(obj)
-            except Exception as ex:
-                self.__session.rollback()
-                raise ex
+    def __str__(self):
+        """Returns a string representation of the instance"""
+        cls = (str(type(self)).split('.')[-1]).split('\'')[0]
+        return '[{}] ({}) {}'.format(cls, self.id, self.__dict__)
 
     def save(self):
-        """Commit the session changes to database."""
-        self.__session.commit()
+        """Updates updated_at with current time when instance is changed"""
+        from models import storage
+        self.updated_at = datetime.now()
+        storage.save()
 
-    def reload(self):
-        """Load storage database."""
-        Base.metadata.create_all(self.__engine)
-        SessionFactory = sessionmaker(
-            bind=self.__engine, expire_on_commit=False
-        )
-        self.__session = scoped_session(SessionFactory)()
-
-    def close(self):
-        """Close the storage engine."""
-        self.__session.close()
+    def to_dict(self):
+        """Convert instance into dict format"""
+        dictionary = {}
+        dictionary.update(self.__dict__)
+        dictionary.update({'__class__':
+                          (str(type(self)).split('.')[-1]).split('\'')[0]})
+        dictionary['created_at'] = self.created_at.isoformat()
+        dictionary['updated_at'] = self.updated_at.isoformat()
+        return dictionary
