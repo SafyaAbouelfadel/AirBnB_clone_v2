@@ -1,34 +1,50 @@
 #!/usr/bin/python3
 """This is the state class"""
-from models.base_model import BaseModel, Base
+import os
 from sqlalchemy import Column, String
 from sqlalchemy.orm import relationship
-from os import environ
+from models.base_model import BaseModel, Base
+from models.city import City
 
 
 class State(BaseModel, Base):
-    """This is the class for State
-    Attributes:
-        __tablename__: name of MySQL table
-        name: input name"""
-    __tablename__ = 'states'
-    name = Column(String(128), nullable=False)
+    """
+    State class inherits from BaseModel and Base.
 
-    if environ['HBNB_TYPE_STORAGE'] == 'db':
-        cities = relationship('City', cascade='all, delete', backref='state')
+    The State class represents a state in the HBNB project.
+    In a database setup, State objects are stored in the 'states' table.
+
+    Attributes:
+        id (str): Unique identifier for the State.
+        created_at (datetime): The datetime when the State instance
+                was created.
+        updated_at (datetime): The datetime when the State instance
+                was last updated.
+        name (str): The name of the State.
+        cities (relationship): One-to-many relationship with the City class,
+                representing cities associated with the state.
+    """
+
+    __tablename__ = "states"
+    name = (
+        Column(String(128), nullable=False)
+        if os.getenv("HBNB_TYPE_STORAGE") == "db"
+        else ""
+    )
+
+    if os.getenv("HBNB_TYPE_STORAGE") == "db":
+        cities = relationship(
+            "City", cascade="all, delete, delete-orphan", backref="state"
+        )
     else:
+
         @property
         def cities(self):
-            """Getter method for cities
-            Return: list of cities with state_id equal to self.id"""
+            """Returns the cities in this State instance."""
             from models import storage
-            from models.city import City
 
-            cities_dict = storage.all(City)
-            cities_list = []
-
-            for city in cities_dict.values():
-                if city.state_id == self.id:
-                    cities_list.append(city)
-
-            return cities_list
+            cities_in_state = []
+            for value in storage.all(City).values():
+                if value.state_id == self.id:
+                    cities_in_state.append(value)
+            return cities_in_state
