@@ -14,7 +14,6 @@ class BaseModel:
     for other classes
     """
 
-    # initialize database columns
     id = Column(String(60), nullable=False, primary_key=True)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow())
     updated_at = Column(DateTime, nullable=False, default=created_at)
@@ -59,15 +58,13 @@ class BaseModel:
         return self.__str__()
 
     def save(self):
-        """updates the public instance attribute updated_at to current
-        """
+        """updates the public instance attribute updated_at to current"""
         self.updated_at = datetime.now()
         models.storage.new(self)
         models.storage.save()
 
     def delete(self):
-        """Delete current instance from storage
-        """
+        """Delete current instance from storage"""
         models.storage.delete(self)
 
     def to_dict(self):
