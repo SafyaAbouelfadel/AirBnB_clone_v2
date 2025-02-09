@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 """an Flask appilication that great user"""
-from flask import Flask
+from flask import Flask, render_template
 
 app = Flask(__name__)
 
