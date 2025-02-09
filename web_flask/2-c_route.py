@@ -27,7 +27,7 @@ def hello():
     return "HBNB"
 
 
-@app.route("/hbnb", strict_slashes=False)
+@app.route("/c/<text>", strict_slashes=False)
 def c_route(text):
     """
     Route that displays 'C ' followed by the value of 'text'.
