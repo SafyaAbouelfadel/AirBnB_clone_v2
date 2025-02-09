@@ -70,7 +70,6 @@ def number(n: int) -> str:
     return "{} is a number".format(n)
 
 
-
 @app.route("/number_template/<int:n>", strict_slashes=False)
 def number_templase(n: int):
     """
