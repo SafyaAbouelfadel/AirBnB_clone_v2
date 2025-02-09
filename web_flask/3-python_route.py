@@ -28,7 +28,7 @@ def hello():
 
 
 @app.route("/c/<text>", strict_slashes=False)
-def c_route(text):
+def c_route(text: str = None) -> str:
     """
     Route that displays 'C ' followed by the value of 'text'.
 
@@ -38,11 +38,12 @@ def c_route(text):
     Returns:
         str: A formatted message.
     """
-    return "C {}".format(text.replace("_"," "))
+    return "C {}".format(text.replace("_", " "))
 
 
+@app.route("/python/", strict_slashes=False)
 @app.route("/python/<text>", strict_slashes=False)
-def python_route(text):
+def python_route(text: str = "is cool") -> str:
     """
     Route that displays 'Python ' followed by the value of 'text'.
 
@@ -52,7 +53,7 @@ def python_route(text):
     Returns:
         str: A formatted message.
     """
-    return "Python {}".format(text.replace("_"," "))
+    return "Python {}".format(text.replace("_", " "))
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port="5000")
